@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<!-- Теги для работы на iPad на весь экран -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Взлом">
+<title>Доступ к системе</title>
+<style>
+  body { margin: 0; display: flex; height: 100vh; background: black; color: #0f0; font-family: monospace; overflow: hidden; user-select: none; -webkit-user-select: none; }
+  #terminal { width: 50%; padding: 20px; box-sizing: border-box; border-right: 2px solid #003300; overflow-y: hidden; display: flex; flex-direction: column; justify-content: flex-end; }
+  #scanner { width: 50%; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; }
+  #touch-area { width: 400px; height: 400px; border: 2px dashed #0f0; border-radius: 50%; display: flex; justify-content: center; align-items: center; text-align: center; font-size: 28px; transition: all 0.3s; }
+  .scanning #touch-area { background: rgba(0, 255, 0, 0.15); border-style: solid; box-shadow: 0 0 40px #0f0; transform: scale(0.95); }
+  #status { margin-top: 20px; font-size: 24px; text-transform: uppercase; letter-spacing: 2px; }
+</style>
+</head>
+<body>
+  <div id="terminal"></div>
+  <div id="scanner">
+    <div id="touch-area">ПРИЛОЖИТЕ<br>5 ПАЛЬЦЕВ<br>И УДЕРЖИВАЙТЕ</div>
+    <div id="status">Система заблокирована</div>
+  </div>
+
+  <script>
+    const targetUrl = "https://youtube.com"; 
+
+    const terminal = document.getElementById('terminal');
+    const logs = ["Установка P2P соединения...", "Обход файрвола iOS...", "Дешифровка биометрии...", "Поиск уязвимостей...", "Перехват пакетов...", "Синхронизация серверов..."];
+    
+    setInterval(() => {
+      const p = document.createElement('div');
+      p.innerText = "root@system:~# " + logs[Math.floor(Math.random() * logs.length)] + " [OK]";
+      terminal.appendChild(p);
+      if (terminal.childNodes.length > 30) terminal.removeChild(terminal.firstChild);
+    }, 250);
+
+    const touchArea = document.getElementById('touch-area');
+    const status = document.getElementById('status');
+    const scanner = document.getElementById('scanner');
+    let scanTimer;
+
+    function startScan(e) {
+      e.preventDefault();
+      
+      // Жесткая проверка: если пальцев меньше 5 - сброс!
+      if (e.touches && e.touches.length < 5) { 
+        status.innerText = `Нужно 5 пальцев! (сейчас: ${e.touches.length})`;
+        status.style.color = "red";
+        scanner.classList.remove('scanning');
+        return; 
+      }
+      
+      scanner.classList.add('scanning');
+      status.innerText = "Считывание биометрии...";
+      status.style.color = "#0f0";
+      
+      let progress = 0;
+      scanTimer = setInterval(() => {
+        progress += 20;
+        status.innerText = `Анализ: ${progress}%`;
+        if (progress >= 100) {
+          clearInterval(scanTimer);
+          status.innerText = "ДОСТУП РАЗРЕШЕН";
+          status.style.color = "#fff";
+          status.style.textShadow = "0 0 10px #0f0";
+          setTimeout(() => { window.location.href = targetUrl; }, 1000);
+        }
+      }, 400);
+    }
+
+    function stopScan(e) {
+      e.preventDefault();
+      clearInterval(scanTimer);
+      if (status.innerText !== "ДОСТУП РАЗРЕШЕН") {
+        scanner.classList.remove('scanning');
+        status.innerText = "Система заблокирована";
+        status.style.color = "#0f0";
+      }
+    }
+
+    // Обработчики только для сенсорного экрана iPad
+    touchArea.addEventListener('touchstart', startScan, {passive: false});
+    window.addEventListener('touchend', stopScan);
+    window.addEventListener('touchcancel', stopScan);
+  </script>
+</body>
+</html>
