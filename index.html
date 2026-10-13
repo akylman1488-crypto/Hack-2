@@ -235,7 +235,7 @@
       let progress = 0;
       // Сканирование длится 7 секунд (70 шагов по 100 мс)
       scanTimer = setInterval(() => {
-        progress += (100 / 70); 
+        progress += (100 / 30); 
         let displayProgress = Math.min(Math.round(progress), 100);
         status.innerText = `Анализ: ${displayProgress}%`;
         
