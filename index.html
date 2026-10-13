@@ -12,53 +12,47 @@
   
   #main-ui { display: flex; width: 100%; height: 100%; transition: opacity 0.3s; }
   
+  /* Левая панель */
   #left-panel { width: 50%; display: flex; flex-direction: column; border-right: 2px solid #003300; box-sizing: border-box; }
   #matrix-container { flex: 1; overflow: hidden; position: relative; }
   #matrix-canvas { display: block; position: absolute; top: 0; left: 0; }
   #terminal { height: 45%; padding: 20px; box-sizing: border-box; overflow-y: hidden; display: flex; flex-direction: column; justify-content: flex-end; border-top: 1px dashed #003300; }
   
-  #scanner { width: 50%; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; }
+  /* Правая панель (Интерактивная) */
+  #right-panel { width: 50%; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; }
   
-  #password-box { margin-bottom: 40px; text-align: center; }
-  #password-box div { font-size: 20px; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 0 5px #0f0; }
-  #pass-input {
-    background: rgba(0, 50, 0, 0.2);
-    border: 2px solid #0f0;
-    color: #0f0;
-    font-family: monospace;
-    font-size: 32px;
-    text-align: center;
-    width: 220px;
-    padding: 10px;
-    outline: none;
-    letter-spacing: 15px;
-    border-radius: 5px;
-    box-shadow: inset 0 0 10px #0f0;
-    transition: all 0.3s;
-    /* Явно разрешаем выделение текста, чтобы фокус работал на iPad */
-    user-select: auto;
-    -webkit-user-select: auto;
-  }
-  #pass-input:focus { box-shadow: 0 0 20px #0f0, inset 0 0 15px #0f0; background: rgba(0, 80, 0, 0.4); }
+  /* ЭКРАН 1: Ввод ПИН-кода */
+  #pin-screen { display: flex; flex-direction: column; align-items: center; transition: opacity 0.5s ease, transform 0.5s ease; width: 100%; }
+  #pin-title { font-size: 24px; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 0 5px #0f0; }
+  #pin-display { background: rgba(0, 50, 0, 0.2); border: 2px solid #0f0; color: #0f0; font-size: 40px; text-align: center; width: 260px; height: 60px; line-height: 60px; margin-bottom: 30px; letter-spacing: 15px; border-radius: 5px; box-shadow: inset 0 0 10px #0f0; }
+  #numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; width: 300px; }
+  .num-btn { background: rgba(0, 30, 0, 0.5); border: 2px solid #005500; border-radius: 10px; height: 70px; display: flex; justify-content: center; align-items: center; font-size: 32px; font-weight: bold; cursor: pointer; transition: all 0.1s; box-shadow: 0 0 5px #003300; }
+  .num-btn:active { background: #0f0; color: black; box-shadow: 0 0 20px #0f0; transform: scale(0.95); }
+  .btn-action { font-size: 24px; color: #aaa; border-color: #333; }
+  .btn-action:active { background: #aaa; }
 
-  #touch-area { width: 350px; height: 350px; border: 2px dashed #0f0; border-radius: 50%; display: flex; justify-content: center; align-items: center; text-align: center; font-size: 28px; transition: all 0.3s; }
+  /* ЭКРАН 2: Сканер пальцев */
+  #scanner-screen { display: none; opacity: 0; flex-direction: column; align-items: center; transition: opacity 0.5s ease; position: absolute; top: 0; left: 0; width: 100%; height: 100%; justify-content: center; }
+  #touch-area { width: 350px; height: 350px; border: 2px dashed #0f0; border-radius: 50%; display: flex; justify-content: center; align-items: center; text-align: center; font-size: 28px; position: relative; transition: all 0.3s; }
+  
+  /* Вращающаяся линия (работает только во время сканирования) */
+  #touch-area::before { content: ''; position: absolute; top: -10px; left: -10px; right: -10px; bottom: -10px; border: 4px solid transparent; border-radius: 50%; border-top-color: #0f0; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+  .scanning #touch-area::before { opacity: 1; animation: spin 1s linear infinite; }
+  @keyframes spin { 100% { transform: rotate(360deg); } }
+
   .scanning #touch-area { background: rgba(0, 255, 0, 0.15); border-style: solid; box-shadow: 0 0 40px #0f0; transform: scale(0.95); }
-  #status { margin-top: 20px; font-size: 24px; text-transform: uppercase; letter-spacing: 2px; text-align: center; height: 30px; }
+  #status { margin-top: 40px; font-size: 24px; text-transform: uppercase; letter-spacing: 2px; text-align: center; height: 30px; }
 
-  #welcome-screen {
-    display: none;
-    position: absolute;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: black;
-    color: #0f0;
-    font-size: 80px;
-    font-weight: bold;
-    text-shadow: 0 0 30px #0f0;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-    z-index: 100;
+  /* Анимация ВЗРЫВА */
+  @keyframes explode {
+    0% { transform: scale(1); opacity: 1; filter: brightness(1); }
+    20% { transform: scale(1.1); filter: brightness(2); background: rgba(0, 255, 0, 0.8); }
+    100% { transform: scale(3); opacity: 0; filter: blur(10px) brightness(3); border-color: transparent; box-shadow: 0 0 100px #0f0; }
   }
+  .exploded { animation: explode 0.8s ease-out forwards; pointer-events: none; }
+
+  /* ЭКРАН 3: Добро пожаловать */
+  #welcome-screen { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: black; color: #0f0; font-size: 80px; font-weight: bold; text-shadow: 0 0 30px #0f0; justify-content: center; align-items: center; text-align: center; z-index: 100; }
 </style>
 </head>
 <body>
@@ -70,14 +64,32 @@
       <div id="terminal"></div>
     </div>
     
-    <div id="scanner">
-      <div id="password-box">
-        <div>ВВЕДИТЕ 6-ЗНАЧНЫЙ КОД:</div>
-        <input type="tel" id="pass-input" maxlength="6" autocomplete="off" placeholder="------">
+    <div id="right-panel">
+      <!-- Экран ввода кода -->
+      <div id="pin-screen">
+        <div id="pin-title">ВВЕДИТЕ КОД ДОСТУПА:</div>
+        <div id="pin-display"></div>
+        <div id="numpad">
+          <div class="num-btn" onclick="addPin('1')">1</div>
+          <div class="num-btn" onclick="addPin('2')">2</div>
+          <div class="num-btn" onclick="addPin('3')">3</div>
+          <div class="num-btn" onclick="addPin('4')">4</div>
+          <div class="num-btn" onclick="addPin('5')">5</div>
+          <div class="num-btn" onclick="addPin('6')">6</div>
+          <div class="num-btn" onclick="addPin('7')">7</div>
+          <div class="num-btn" onclick="addPin('8')">8</div>
+          <div class="num-btn" onclick="addPin('9')">9</div>
+          <div class="num-btn btn-action" onclick="clearPin()">C</div>
+          <div class="num-btn" onclick="addPin('0')">0</div>
+          <div class="num-btn btn-action" onclick="checkPin()" style="color:#0f0; border-color:#0f0;">OK</div>
+        </div>
       </div>
 
-      <div id="touch-area">ПРИЛОЖИТЕ<br>5 ПАЛЬЦЕВ<br>И УДЕРЖИВАЙТЕ</div>
-      <div id="status">Система заблокирована</div>
+      <!-- Экран сканера -->
+      <div id="scanner-screen">
+        <div id="touch-area">ПРИЛОЖИТЕ<br>5 ПАЛЬЦЕВ<br>И УДЕРЖИВАЙТЕ</div>
+        <div id="status">Ожидание биометрии...</div>
+      </div>
     </div>
   </div>
 
@@ -85,12 +97,11 @@
 
   <script>
     const targetUrl = "https://youtube.com"; 
-    const SECRET_PASSWORD = "123456"; // <-- Впишите сюда ваш нужный 6-значный код
+    const SECRET_PASSWORD = "123456"; // <-- ВАШ ПАРОЛЬ ТУТ
 
     // === 1. ГЕНЕРАЦИЯ ЛОГОВ ===
     const terminal = document.getElementById('terminal');
-    const logs = ["Установка P2P соединения...", "Обход файрвола iOS...", "Дешифровка биометрии...", "Поиск уязвимостей...", "Перехват пакетов...", "Синхронизация серверов..."];
-    
+    const logs = ["Установка P2P соединения...", "Обход файрвола iOS...", "Дешифровка протоколов...", "Поиск уязвимостей...", "Перехват пакетов...", "Синхронизация серверов..."];
     setInterval(() => {
       const p = document.createElement('div');
       p.innerText = "root@system:~# " + logs[Math.floor(Math.random() * logs.length)] + " [OK]";
@@ -98,15 +109,13 @@
       if (terminal.childNodes.length > 15) terminal.removeChild(terminal.firstChild);
     }, 250);
 
-    // === 2. ЭФФЕКТ МАТРИЦЫ ===
+    // === 2. МАТРИЦА ===
     const canvas = document.getElementById('matrix-canvas');
     const ctx = canvas.getContext('2d');
     const matrixContainer = document.getElementById('matrix-container');
-
     let chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*()ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ'.split('');
     const fontSize = 16;
     let drops = [];
-
     function resizeCanvas() {
       canvas.width = matrixContainer.clientWidth;
       canvas.height = matrixContainer.clientHeight;
@@ -116,133 +125,159 @@
     }
     window.addEventListener('resize', resizeCanvas);
     setTimeout(resizeCanvas, 100);
-
     function drawMatrix() {
       ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.fillStyle = '#0F0'; 
       ctx.font = fontSize + 'px monospace';
-      
       for(let i = 0; i < drops.length; i++) {
         const text = chars[Math.floor(Math.random() * chars.length)];
         ctx.fillText(text, i * fontSize, drops[i] * fontSize);
-        if(drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
-          drops[i] = 0;
-        }
+        if(drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
         drops[i]++;
       }
     }
     setInterval(drawMatrix, 50);
 
-    // === 3. ЛОГИКА СКАНЕРА, ПАРОЛЯ И ГОЛОСА ===
+    // === 3. ЛОГИКА ПИН-ПАДА ===
+    let currentPin = "";
+    const pinDisplay = document.getElementById('pin-display');
+    const pinScreen = document.getElementById('pin-screen');
+    const scannerScreen = document.getElementById('scanner-screen');
+    let voiceUnlocked = false;
+
+    function addPin(num) {
+      if (!voiceUnlocked) {
+        window.speechSynthesis.speak(new SpeechSynthesisUtterance("")); // Разблокировка голоса для iOS
+        voiceUnlocked = true;
+      }
+      if (currentPin.length < 6) {
+        currentPin += num;
+        pinDisplay.innerText = currentPin.replace(/./g, '*'); // Показываем звездочки
+      }
+    }
+
+    function clearPin() {
+      currentPin = "";
+      pinDisplay.innerText = "";
+      pinDisplay.style.borderColor = "#0f0";
+      pinDisplay.style.boxShadow = "inset 0 0 10px #0f0";
+    }
+
+    function checkPin() {
+      if (currentPin === SECRET_PASSWORD) {
+        // Пароль верный - плавно прячем ПИН-пад и показываем сканер
+        pinDisplay.style.borderColor = "#0f0";
+        pinScreen.style.opacity = "0";
+        pinScreen.style.transform = "scale(0.9)";
+        
+        setTimeout(() => {
+          pinScreen.style.display = "none";
+          scannerScreen.style.display = "flex";
+          // Небольшая задержка перед проявлением, чтобы было плавно
+          setTimeout(() => {
+            scannerScreen.style.opacity = "1";
+          }, 50);
+        }, 500); // 0.5 секунды на растворение
+      } else {
+        // Пароль неверный - красная вспышка
+        pinDisplay.style.borderColor = "red";
+        pinDisplay.style.boxShadow = "inset 0 0 20px red";
+        setTimeout(() => { clearPin(); }, 500);
+      }
+    }
+
+    // === 4. ЛОГИКА СКАНЕРА И ВЗРЫВА ===
     const touchArea = document.getElementById('touch-area');
     const status = document.getElementById('status');
-    const scanner = document.getElementById('scanner');
     const mainUi = document.getElementById('main-ui');
     const welcomeScreen = document.getElementById('welcome-screen');
-    const passInput = document.getElementById('pass-input');
-    
     let scanTimer;
     let isRedirecting = false; 
 
-    // Секретный трюк для iOS: разблокируем аудиодвижок при первом же любом касании экрана
-    function unlockAudioForiOS() {
-      let silentMsg = new SpeechSynthesisUtterance(" ");
-      silentMsg.volume = 0;
-      window.speechSynthesis.speak(silentMsg);
-      document.removeEventListener('touchstart', unlockAudioForiOS);
-    }
-    document.addEventListener('touchstart', unlockAudioForiOS);
-
-    function resetScanner() {
+    // Сброс при возвращении в приложение
+    function resetAll() {
       clearInterval(scanTimer);
       isRedirecting = false;
-      scanner.classList.remove('scanning');
-      status.innerText = "Система заблокирована";
+      currentPin = "";
+      pinDisplay.innerText = "";
+      touchArea.classList.remove('exploded');
+      touchArea.classList.remove('scanning');
+      status.innerText = "Ожидание биометрии...";
       status.style.color = "#0f0";
-      passInput.value = ""; 
+      
       mainUi.style.display = "flex";
       welcomeScreen.style.display = "none";
+      pinScreen.style.display = "flex";
+      pinScreen.style.opacity = "1";
+      pinScreen.style.transform = "scale(1)";
+      scannerScreen.style.display = "none";
+      scannerScreen.style.opacity = "0";
     }
 
-    window.addEventListener('pageshow', resetScanner);
-    window.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'visible') resetScanner();
-    });
+    window.addEventListener('pageshow', resetAll);
 
     function startScan(e) {
       if (isRedirecting) return; 
-      passInput.blur(); // Скрываем клавиатуру, чтобы не мешала сканировать
-
-      if (passInput.value !== SECRET_PASSWORD) {
-        status.innerText = "ОШИБКА: НЕВЕРНЫЙ КОД";
-        status.style.color = "red";
-        passInput.style.borderColor = "red";
-        passInput.style.boxShadow = "inset 0 0 10px red";
-        setTimeout(() => {
-          passInput.style.borderColor = "#0f0";
-          passInput.style.boxShadow = "inset 0 0 10px #0f0";
-        }, 1500);
-        return;
-      }
+      e.preventDefault(); 
       
       if (e.touches && e.touches.length < 5) { 
         status.innerText = `Нужно 5 пальцев! (сейчас: ${e.touches.length})`;
         status.style.color = "red";
-        scanner.classList.remove('scanning');
+        touchArea.classList.remove('scanning');
         return; 
       }
       
-      e.preventDefault(); // Блокируем скролл только внутри круга
-      scanner.classList.add('scanning');
+      touchArea.classList.add('scanning');
       status.innerText = "Считывание биометрии...";
       status.style.color = "#0f0";
       
       let progress = 0;
+      // Сканирование длится 7 секунд (70 шагов по 100 мс)
       scanTimer = setInterval(() => {
-        progress += 20;
-        status.innerText = `Анализ: ${progress}%`;
+        progress += (100 / 70); 
+        let displayProgress = Math.min(Math.round(progress), 100);
+        status.innerText = `Анализ: ${displayProgress}%`;
         
-        if (progress >= 100) {
+        if (displayProgress >= 100) {
           clearInterval(scanTimer);
           isRedirecting = true;
           
-          mainUi.style.display = "none";
-          welcomeScreen.style.display = "flex";
+          status.innerText = "ВЫПОЛНЯЕТСЯ ВХОД...";
           
-          let utterance = new SpeechSynthesisUtterance("Добро пожаловать в систему, мистер Исанур");
-          utterance.lang = "ru-RU";
-          utterance.rate = 0.9;
-          utterance.pitch = 0.8;
-          utterance.volume = 1;
-          window.speechSynthesis.speak(utterance);
+          // ЗАПУСК ВЗРЫВА
+          touchArea.classList.add('exploded');
 
-          setTimeout(() => { 
-            window.location.href = targetUrl; 
-          }, 3500);
+          // Ждем 0.8 секунд пока идет взрыв, затем переключаем экраны
+          setTimeout(() => {
+            mainUi.style.display = "none";
+            welcomeScreen.style.display = "flex";
+            
+            // Запуск голоса
+            let utterance = new SpeechSynthesisUtterance("Добро пожаловать в систему, мистер Исанур");
+            utterance.lang = "ru-RU";
+            utterance.rate = 0.9;
+            utterance.pitch = 0.8;
+            window.speechSynthesis.speak(utterance);
+
+            // Переход на сайт через 3.5 сек
+            setTimeout(() => { window.location.href = targetUrl; }, 3500);
+          }, 800);
         }
-      }, 400);
+      }, 100); // Обновляем каждые 100 мс
     }
 
     function stopScan(e) {
-      // ИСПРАВЛЕНИЕ: если клик был по инпуту пароля — ничего не блокируем
-      if (e.target.id === 'pass-input' || e.target.tagName === 'INPUT') return;
-
       if (isRedirecting) return; 
       clearInterval(scanTimer);
-      scanner.classList.remove('scanning');
-      
-      if (passInput.value !== SECRET_PASSWORD) {
-        status.innerText = "Система заблокирована";
-      } else {
-        status.innerText = "Сканирование прервано";
-      }
-      status.style.color = "#0f0";
+      touchArea.classList.remove('scanning');
+      status.innerText = "Сканирование прервано";
+      status.style.color = "red";
     }
 
     touchArea.addEventListener('touchstart', startScan, {passive: false});
-    window.addEventListener('touchend', stopScan);
-    window.addEventListener('touchcancel', stopScan);
+    touchArea.addEventListener('touchend', stopScan);
+    touchArea.addEventListener('touchcancel', stopScan);
   </script>
 </body>
 </html>
