@@ -19,7 +19,6 @@
   
   #scanner { width: 50%; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; }
   
-  /* Стили для поля пароля */
   #password-box { margin-bottom: 40px; text-align: center; }
   #password-box div { font-size: 20px; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 0 5px #0f0; }
   #pass-input {
@@ -36,6 +35,9 @@
     border-radius: 5px;
     box-shadow: inset 0 0 10px #0f0;
     transition: all 0.3s;
+    /* Явно разрешаем выделение текста, чтобы фокус работал на iPad */
+    user-select: auto;
+    -webkit-user-select: auto;
   }
   #pass-input:focus { box-shadow: 0 0 20px #0f0, inset 0 0 15px #0f0; background: rgba(0, 80, 0, 0.4); }
 
@@ -69,7 +71,6 @@
     </div>
     
     <div id="scanner">
-      <!-- Блок для ввода пароля -->
       <div id="password-box">
         <div>ВВЕДИТЕ 6-ЗНАЧНЫЙ КОД:</div>
         <input type="tel" id="pass-input" maxlength="6" autocomplete="off" placeholder="------">
@@ -83,9 +84,8 @@
   <div id="welcome-screen">ДОБРО ПОЖАЛОВАТЬ</div>
 
   <script>
-    // === НАСТРОЙКИ СЕКРЕТНОСТИ ===
     const targetUrl = "https://youtube.com"; 
-    const SECRET_PASSWORD = "212170"; // <--- ЗАМЕНИТЕ ЭТИ 6 ЦИФР НА СВОЙ ПАРОЛЬ
+    const SECRET_PASSWORD = "123456"; // <-- Впишите сюда ваш нужный 6-значный код
 
     // === 1. ГЕНЕРАЦИЯ ЛОГОВ ===
     const terminal = document.getElementById('terminal');
@@ -134,7 +134,7 @@
     }
     setInterval(drawMatrix, 50);
 
-    // === 3. ЛОГИКА СКАНЕРА И ПАРОЛЯ ===
+    // === 3. ЛОГИКА СКАНЕРА, ПАРОЛЯ И ГОЛОСА ===
     const touchArea = document.getElementById('touch-area');
     const status = document.getElementById('status');
     const scanner = document.getElementById('scanner');
@@ -144,7 +144,15 @@
     
     let scanTimer;
     let isRedirecting = false; 
-    let voiceUnlocked = false; 
+
+    // Секретный трюк для iOS: разблокируем аудиодвижок при первом же любом касании экрана
+    function unlockAudioForiOS() {
+      let silentMsg = new SpeechSynthesisUtterance(" ");
+      silentMsg.volume = 0;
+      window.speechSynthesis.speak(silentMsg);
+      document.removeEventListener('touchstart', unlockAudioForiOS);
+    }
+    document.addEventListener('touchstart', unlockAudioForiOS);
 
     function resetScanner() {
       clearInterval(scanTimer);
@@ -152,7 +160,7 @@
       scanner.classList.remove('scanning');
       status.innerText = "Система заблокирована";
       status.style.color = "#0f0";
-      passInput.value = ""; // Очищаем пароль при сбросе
+      passInput.value = ""; 
       mainUi.style.display = "flex";
       welcomeScreen.style.display = "none";
     }
@@ -163,20 +171,9 @@
     });
 
     function startScan(e) {
-      e.preventDefault();
       if (isRedirecting) return; 
+      passInput.blur(); // Скрываем клавиатуру, чтобы не мешала сканировать
 
-      // Прячем клавиатуру iPad, если она открыта, чтобы не мешала сканированию
-      passInput.blur();
-
-      // Проверка голоса
-      if (!voiceUnlocked) {
-        let unlockMsg = new SpeechSynthesisUtterance("");
-        window.speechSynthesis.speak(unlockMsg);
-        voiceUnlocked = true;
-      }
-
-      // ПРОВЕРКА ПАРОЛЯ
       if (passInput.value !== SECRET_PASSWORD) {
         status.innerText = "ОШИБКА: НЕВЕРНЫЙ КОД";
         status.style.color = "red";
@@ -189,7 +186,6 @@
         return;
       }
       
-      // ПРОВЕРКА 5 ПАЛЬЦЕВ
       if (e.touches && e.touches.length < 5) { 
         status.innerText = `Нужно 5 пальцев! (сейчас: ${e.touches.length})`;
         status.style.color = "red";
@@ -197,6 +193,7 @@
         return; 
       }
       
+      e.preventDefault(); // Блокируем скролл только внутри круга
       scanner.classList.add('scanning');
       status.innerText = "Считывание биометрии...";
       status.style.color = "#0f0";
@@ -217,6 +214,7 @@
           utterance.lang = "ru-RU";
           utterance.rate = 0.9;
           utterance.pitch = 0.8;
+          utterance.volume = 1;
           window.speechSynthesis.speak(utterance);
 
           setTimeout(() => { 
@@ -227,7 +225,9 @@
     }
 
     function stopScan(e) {
-      e.preventDefault();
+      // ИСПРАВЛЕНИЕ: если клик был по инпуту пароля — ничего не блокируем
+      if (e.target.id === 'pass-input' || e.target.tagName === 'INPUT') return;
+
       if (isRedirecting) return; 
       clearInterval(scanTimer);
       scanner.classList.remove('scanning');
