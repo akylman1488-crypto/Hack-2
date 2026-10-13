@@ -34,7 +34,6 @@
   /* ЭКРАН 2: Сканер пальцев */
   #scanner-screen { display: none; opacity: 0; flex-direction: column; align-items: center; transition: opacity 0.5s ease; position: absolute; top: 0; left: 0; width: 100%; height: 100%; justify-content: center; }
   
-  /* Увеличенный сканер */
   #touch-area { 
     width: 480px; 
     height: 480px; 
@@ -47,10 +46,9 @@
     font-size: 36px; 
     position: relative; 
     transition: all 0.3s; 
-    overflow: hidden; /* Чтобы луч не выходил за границы круга */
+    overflow: hidden; 
   }
   
-  /* Новый радарный луч */
   .radar-ray {
     position: absolute;
     width: 100%;
@@ -92,7 +90,6 @@
     </div>
     
     <div id="right-panel">
-      <!-- Экран ввода кода -->
       <div id="pin-screen">
         <div id="pin-title">ВВЕДИТЕ КОД ДОСТУПА:</div>
         <div id="pin-display"></div>
@@ -112,7 +109,6 @@
         </div>
       </div>
 
-      <!-- Экран сканера -->
       <div id="scanner-screen">
         <div id="touch-area">
           <div class="radar-ray"></div>
@@ -126,153 +122,188 @@
   <div id="welcome-screen">ДОБРО ПОЖАЛОВАТЬ</div>
 
   <script>
+    // === НАСТРОЙКИ ===
     const targetUrl = "https://youtube.com"; 
-    const SECRET_PASSWORD = "123456"; // <-- ВАШ ПАРОЛЬ ТУТ
+    const SECRET_PASSWORD = "123456"; // <--- ВАШ ПАРОЛЬ ТУТ
 
-    // === 1. ГЕНЕРАЦИЯ ЛОГОВ ===
-    const terminal = document.getElementById('terminal');
-    const logs = ["Установка P2P соединения...", "Обход файрвола iOS...", "Дешифровка протоколов...", "Поиск уязвимостей...", "Перехват пакетов...", "Синхронизация серверов..."];
-    setInterval(() => {
-      const p = document.createElement('div');
-      p.innerText = "root@system:~# " + logs[Math.floor(Math.random() * logs.length)] + " [OK]";
-      terminal.appendChild(p);
-      if (terminal.childNodes.length > 15) terminal.removeChild(terminal.firstChild);
-    }, 250);
-
-    // === 2. МАТРИЦА ===
-    const canvas = document.getElementById('matrix-canvas');
-    const ctx = canvas.getContext('2d');
-    const matrixContainer = document.getElementById('matrix-container');
-    let chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*()ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ'.split('');
-    const fontSize = 16;
-    let drops = [];
-    function resizeCanvas() {
-      canvas.width = matrixContainer.clientWidth;
-      canvas.height = matrixContainer.clientHeight;
-      const columns = canvas.width / fontSize;
-      drops = [];
-      for(let x = 0; x < columns; x++) drops[x] = 1;
-    }
-    window.addEventListener('resize', resizeCanvas);
-    setTimeout(resizeCanvas, 100);
-    function drawMatrix() {
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = '#0F0'; 
-      ctx.font = fontSize + 'px monospace';
-      for(let i = 0; i < drops.length; i++) {
-        const text = chars[Math.floor(Math.random() * chars.length)];
-        ctx.fillText(text, i * fontSize, drops[i] * fontSize);
-        if(drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
-        drops[i]++;
+    window.onload = function() {
+      // === 1. ЛОГИ ===
+      const terminal = document.getElementById('terminal');
+      const logs = ["Установка P2P соединения...", "Обход файрвола iOS...", "Дешифровка протоколов...", "Поиск уязвимостей...", "Перехват пакетов...", "Синхронизация серверов..."];
+      if (terminal) {
+        setInterval(() => {
+          const p = document.createElement('div');
+          p.innerText = "root@system:~# " + logs[Math.floor(Math.random() * logs.length)] + " [OK]";
+          terminal.appendChild(p);
+          if (terminal.childNodes.length > 15) terminal.removeChild(terminal.firstChild);
+        }, 250);
       }
-    }
-    setInterval(drawMatrix, 50);
 
-    // === 3. ЛОГИКА ПИН-ПАДА ===
-    let currentPin = "";
-    const pinDisplay = document.getElementById('pin-display');
-    const pinScreen = document.getElementById('pin-screen');
-    const scannerScreen = document.getElementById('scanner-screen');
-    let voiceUnlocked = false;
+      // === 2. МАТРИЦА ===
+      const canvas = document.getElementById('matrix-canvas');
+      const ctx = canvas ? canvas.getContext('2d') : null;
+      const matrixContainer = document.getElementById('matrix-container');
+      let chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*()ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ'.split('');
+      const fontSize = 16;
+      let drops = [];
+      
+      function resizeCanvas() {
+        if (!matrixContainer || !canvas) return;
+        canvas.width = matrixContainer.offsetWidth;
+        canvas.height = matrixContainer.offsetHeight;
+        const columns = canvas.width / fontSize;
+        drops = [];
+        for(let x = 0; x < columns; x++) drops[x] = 1;
+      }
+      
+      window.addEventListener('resize', resizeCanvas);
+      setTimeout(resizeCanvas, 100);
+      
+      function drawMatrix() {
+        if (!ctx) return;
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#0F0'; 
+        ctx.font = fontSize + 'px monospace';
+        for(let i = 0; i < drops.length; i++) {
+          const text = chars[Math.floor(Math.random() * chars.length)];
+          ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+          if(drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+          drops[i]++;
+        }
+      }
+      if (ctx) setInterval(drawMatrix, 50);
 
-    function addPin(num) {
-      if (!voiceUnlocked) {
+      // === 3. СКАНЕР ===
+      const touchArea = document.getElementById('touch-area');
+      const status = document.getElementById('status');
+      const mainUi = document.getElementById('main-ui');
+      const welcomeScreen = document.getElementById('welcome-screen');
+      const pinScreen = document.getElementById('pin-screen');
+      const scannerScreen = document.getElementById('scanner-screen');
+      const pinDisplay = document.getElementById('pin-display');
+      
+      let scanTimer;
+      let isRedirecting = false; 
+
+      function resetAll() {
+        clearInterval(scanTimer);
+        isRedirecting = false;
+        window.currentPin = "";
+        pinDisplay.innerText = "";
+        touchArea.classList.remove('exploded');
+        touchArea.classList.remove('scanning');
+        status.innerText = "Ожидание биометрии...";
+        status.style.color = "#0f0";
+        
+        mainUi.style.display = "flex";
+        welcomeScreen.style.display = "none";
+        pinScreen.style.display = "flex";
+        pinScreen.style.opacity = "1";
+        pinScreen.style.transform = "scale(1)";
+        scannerScreen.style.display = "none";
+        scannerScreen.style.opacity = "0";
+      }
+
+      window.addEventListener('pageshow', resetAll);
+
+      function startScan(e) {
+        if (isRedirecting) return; 
+        e.preventDefault(); 
+        
+        if (e.touches && e.touches.length < 5) { 
+          status.innerText = `Нужно 5 пальцев! (сейчас: ${e.touches.length})`;
+          status.style.color = "red";
+          touchArea.classList.remove('scanning');
+          return; 
+        }
+        
+        touchArea.classList.add('scanning');
+        status.innerText = "Считывание биометрии...";
+        status.style.color = "#0f0";
+        
+        let progress = 0;
+        scanTimer = setInterval(() => {
+          progress += (100 / 70); 
+          let displayProgress = Math.min(Math.round(progress), 100);
+          status.innerText = `Анализ: ${displayProgress}%`;
+          
+          if (displayProgress >= 100) {
+            clearInterval(scanTimer);
+            isRedirecting = true;
+            status.innerText = "ВЫПОЛНЯЕТСЯ ВХОД...";
+            touchArea.classList.add('exploded');
+
+            setTimeout(() => {
+              mainUi.style.display = "none";
+              welcomeScreen.style.display = "flex";
+              
+              let utterance = new SpeechSynthesisUtterance("Добро пожаловать в систему, мистер Исанур");
+              utterance.lang = "ru-RU";
+              utterance.rate = 0.9;
+              utterance.pitch = 0.8;
+              window.speechSynthesis.speak(utterance);
+
+              setTimeout(() => { window.location.href = targetUrl; }, 3500);
+            }, 800);
+          }
+        }, 100);
+      }
+
+      function stopScan(e) {
+        if (isRedirecting) return; 
+        clearInterval(scanTimer);
+        touchArea.classList.remove('scanning');
+        status.innerText = "Сканирование прервано";
+        status.style.color = "red";
+      }
+
+      touchArea.addEventListener('touchstart', startScan, {passive: false});
+      touchArea.addEventListener('touchend', stopScan);
+      touchArea.addEventListener('touchcancel', stopScan);
+    };
+
+    // === ГЛОБАЛЬНЫЕ ФУНКЦИИ ДЛЯ КНОПОК ===
+    window.currentPin = "";
+    window.voiceUnlocked = false;
+
+    window.addPin = function(num) {
+      if (!window.voiceUnlocked) {
         window.speechSynthesis.speak(new SpeechSynthesisUtterance(""));
-        voiceUnlocked = true;
+        window.voiceUnlocked = true;
       }
-      if (currentPin.length < 6) {
-        currentPin += num;
-        pinDisplay.innerText = currentPin.replace(/./g, '*');
+      if (window.currentPin.length < 6) {
+        window.currentPin += num;
+        document.getElementById('pin-display').innerText = window.currentPin.replace(/./g, '*');
       }
-    }
+    };
 
-    function clearPin() {
-      currentPin = "";
-      pinDisplay.innerText = "";
-      pinDisplay.style.borderColor = "#0f0";
-      pinDisplay.style.boxShadow = "inset 0 0 10px #0f0";
-    }
+    window.clearPin = function() {
+      window.currentPin = "";
+      const pd = document.getElementById('pin-display');
+      pd.innerText = "";
+      pd.style.borderColor = "#0f0";
+      pd.style.boxShadow = "inset 0 0 10px #0f0";
+    };
 
-    function checkPin() {
-      if (currentPin === SECRET_PASSWORD) {
-        pinDisplay.style.borderColor = "#0f0";
-        pinScreen.style.opacity = "0";
-        pinScreen.style.transform = "scale(0.9)";
+    window.checkPin = function() {
+      const pd = document.getElementById('pin-display');
+      if (window.currentPin === "123456") { // <-- ПАРОЛЬ ТУТ
+        pd.style.borderColor = "#0f0";
+        document.getElementById('pin-screen').style.opacity = "0";
+        document.getElementById('pin-screen').style.transform = "scale(0.9)";
         
         setTimeout(() => {
-          pinScreen.style.display = "none";
-          scannerScreen.style.display = "flex";
-          setTimeout(() => {
-            scannerScreen.style.opacity = "1";
-          }, 50);
+          document.getElementById('pin-screen').style.display = "none";
+          document.getElementById('scanner-screen').style.display = "flex";
+          setTimeout(() => { document.getElementById('scanner-screen').style.opacity = "1"; }, 50);
         }, 500);
       } else {
-        pinDisplay.style.borderColor = "red";
-        pinDisplay.style.boxShadow = "inset 0 0 20px red";
-        setTimeout(() => { clearPin(); }, 500);
+        pd.style.borderColor = "red";
+        pd.style.boxShadow = "inset 0 0 20px red";
+        setTimeout(() => { window.clearPin(); }, 500);
       }
-    }
-
-    // === 4. ЛОГИКА СКАНЕРА И ВЗРЫВА ===
-    const touchArea = document.getElementById('touch-area');
-    const status = document.getElementById('status');
-    const mainUi = document.getElementById('main-ui');
-    const welcomeScreen = document.getElementById('welcome-screen');
-    let scanTimer;
-    let isRedirecting = false; 
-
-    function resetAll() {
-      clearInterval(scanTimer);
-      isRedirecting = false;
-      currentPin = "";
-      pinDisplay.innerText = "";
-      touchArea.classList.remove('exploded');
-      touchArea.classList.remove('scanning');
-      status.innerText = "Ожидание биометрии...";
-      status.style.color = "#0f0";
-      
-      mainUi.style.display = "flex";
-      welcomeScreen.style.display = "none";
-      pinScreen.style.display = "flex";
-      pinScreen.style.opacity = "1";
-      pinScreen.style.transform = "scale(1)";
-      scannerScreen.style.display = "none";
-      scannerScreen.style.opacity = "0";
-    }
-
-    window.addEventListener('pageshow', resetAll);
-
-    function startScan(e) {
-      if (isRedirecting) return; 
-      e.preventDefault(); 
-      
-      if (e.touches && e.touches.length < 5) { 
-        status.innerText = `Нужно 5 пальцев! (сейчас: ${e.touches.length})`;
-        status.style.color = "red";
-        touchArea.classList.remove('scanning');
-        return; 
-      }
-      
-      touchArea.classList.add('scanning');
-      status.innerText = "Считывание биометрии...";
-      status.style.color = "#0f0";
-      
-      let progress = 0;
-      scanTimer = setInterval(() => {
-        progress += (100 / 70); 
-        let displayProgress = Math.min(Math.round(progress), 100);
-        status.innerText = `Анализ: ${displayProgress}%`;
-        
-        if (displayProgress >= 100) {
-          clearInterval(scanTimer);
-          isRedirecting = true;
-          
-          status.innerText = "ВЫПОЛНЯЕТСЯ ВХОД...";
-          touchArea.classList.add('exploded');
-
-          setTimeout(() => {
-            mainUi.style.display = "none";
-            welcomeScreen.style.display = "flex";
-            
-            let utterance = new SpeechSynthesisUtterance("Добро пожаловать в систему, мистер Иса
+    };
+  </script>
+</body>
+</html>
