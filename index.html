@@ -33,15 +33,42 @@
 
   /* ЭКРАН 2: Сканер пальцев */
   #scanner-screen { display: none; opacity: 0; flex-direction: column; align-items: center; transition: opacity 0.5s ease; position: absolute; top: 0; left: 0; width: 100%; height: 100%; justify-content: center; }
-  #touch-area { width: 550px; height: 550px; border: 2px dashed #0f0; border-radius: 50%; display: flex; justify-content: center; align-items: center; text-align: center; font-size: 28px; position: relative; transition: all 0.3s; }
   
-  /* Вращающаяся линия (работает только во время сканирования) */
-  #touch-area::before { content: ''; position: absolute; top: -10px; left: -10px; right: -10px; bottom: -10px; border: 4px solid transparent; border-radius: 50%; border-top-color: #0f0; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
-  .scanning #touch-area::before { opacity: 1; animation: spin 1s linear infinite; }
+  /* Увеличенный сканер */
+  #touch-area { 
+    width: 480px; 
+    height: 480px; 
+    border: 2px dashed #0f0; 
+    border-radius: 50%; 
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    text-align: center; 
+    font-size: 36px; 
+    position: relative; 
+    transition: all 0.3s; 
+    overflow: hidden; /* Чтобы луч не выходил за границы круга */
+  }
+  
+  /* Новый радарный луч */
+  .radar-ray {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: conic-gradient(from 0deg, transparent 50%, rgba(0, 255, 0, 0.2) 80%, rgba(0, 255, 0, 0.9) 100%);
+    opacity: 0;
+    pointer-events: none;
+    z-index: 1;
+  }
+  .scanning .radar-ray {
+    opacity: 1;
+    animation: spin 1.5s linear infinite;
+  }
   @keyframes spin { 100% { transform: rotate(360deg); } }
 
-  .scanning #touch-area { background: rgba(0, 255, 0, 0.15); border-style: solid; box-shadow: 0 0 40px #0f0; transform: scale(0.95); }
-  #status { margin-top: 40px; font-size: 24px; text-transform: uppercase; letter-spacing: 2px; text-align: center; height: 30px; }
+  .scanning #touch-area { border-style: solid; box-shadow: 0 0 50px #0f0; transform: scale(0.97); }
+  #status { margin-top: 40px; font-size: 28px; text-transform: uppercase; letter-spacing: 2px; text-align: center; height: 35px; }
 
   /* Анимация ВЗРЫВА */
   @keyframes explode {
@@ -87,7 +114,10 @@
 
       <!-- Экран сканера -->
       <div id="scanner-screen">
-        <div id="touch-area">ПРИЛОЖИТЕ<br>5 ПАЛЬЦЕВ<br>И УДЕРЖИВАЙТЕ</div>
+        <div id="touch-area">
+          <div class="radar-ray"></div>
+          <div style="z-index: 2;">ПРИЛОЖИТЕ<br>5 ПАЛЬЦЕВ<br>И УДЕРЖИВАЙТЕ</div>
+        </div>
         <div id="status">Ожидание биометрии...</div>
       </div>
     </div>
@@ -148,12 +178,12 @@
 
     function addPin(num) {
       if (!voiceUnlocked) {
-        window.speechSynthesis.speak(new SpeechSynthesisUtterance("")); // Разблокировка голоса для iOS
+        window.speechSynthesis.speak(new SpeechSynthesisUtterance(""));
         voiceUnlocked = true;
       }
       if (currentPin.length < 6) {
         currentPin += num;
-        pinDisplay.innerText = currentPin.replace(/./g, '*'); // Показываем звездочки
+        pinDisplay.innerText = currentPin.replace(/./g, '*');
       }
     }
 
@@ -166,7 +196,6 @@
 
     function checkPin() {
       if (currentPin === SECRET_PASSWORD) {
-        // Пароль верный - плавно прячем ПИН-пад и показываем сканер
         pinDisplay.style.borderColor = "#0f0";
         pinScreen.style.opacity = "0";
         pinScreen.style.transform = "scale(0.9)";
@@ -174,13 +203,11 @@
         setTimeout(() => {
           pinScreen.style.display = "none";
           scannerScreen.style.display = "flex";
-          // Небольшая задержка перед проявлением, чтобы было плавно
           setTimeout(() => {
             scannerScreen.style.opacity = "1";
           }, 50);
-        }, 500); // 0.5 секунды на растворение
+        }, 500);
       } else {
-        // Пароль неверный - красная вспышка
         pinDisplay.style.borderColor = "red";
         pinDisplay.style.boxShadow = "inset 0 0 20px red";
         setTimeout(() => { clearPin(); }, 500);
@@ -195,7 +222,6 @@
     let scanTimer;
     let isRedirecting = false; 
 
-    // Сброс при возвращении в приложение
     function resetAll() {
       clearInterval(scanTimer);
       isRedirecting = false;
@@ -233,9 +259,8 @@
       status.style.color = "#0f0";
       
       let progress = 0;
-      // Сканирование длится 7 секунд (70 шагов по 100 мс)
       scanTimer = setInterval(() => {
-        progress += (100 / 30); 
+        progress += (100 / 70); 
         let displayProgress = Math.min(Math.round(progress), 100);
         status.innerText = `Анализ: ${displayProgress}%`;
         
@@ -244,40 +269,10 @@
           isRedirecting = true;
           
           status.innerText = "ВЫПОЛНЯЕТСЯ ВХОД...";
-          
-          // ЗАПУСК ВЗРЫВА
           touchArea.classList.add('exploded');
 
-          // Ждем 0.8 секунд пока идет взрыв, затем переключаем экраны
           setTimeout(() => {
             mainUi.style.display = "none";
             welcomeScreen.style.display = "flex";
             
-            // Запуск голоса
-            let utterance = new SpeechSynthesisUtterance("Добро пожаловать в систему");
-            utterance.lang = "ru-RU";
-            utterance.rate = 0.9;
-            utterance.pitch = 0.8;
-            window.speechSynthesis.speak(utterance);
-
-            // Переход на сайт через 3.5 сек
-            setTimeout(() => { window.location.href = targetUrl; }, 3500);
-          }, 800);
-        }
-      }, 100); // Обновляем каждые 100 мс
-    }
-
-    function stopScan(e) {
-      if (isRedirecting) return; 
-      clearInterval(scanTimer);
-      touchArea.classList.remove('scanning');
-      status.innerText = "Сканирование прервано";
-      status.style.color = "red";
-    }
-
-    touchArea.addEventListener('touchstart', startScan, {passive: false});
-    touchArea.addEventListener('touchend', stopScan);
-    touchArea.addEventListener('touchcancel', stopScan);
-  </script>
-</body>
-</html>
+            let utterance = new SpeechSynthesisUtterance("Добро пожаловать в систему, мистер Иса
